@@ -4,6 +4,9 @@ use bevy::window::WindowResolution;
 #[cfg(feature = "debug")]
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
+use board_plugin::components::Coordinates;
+use board_plugin::BoardPlugin;
+
 fn main() {
     let mut app = App::new();
 
@@ -21,6 +24,8 @@ fn main() {
     #[cfg(feature = "debug")]
     app.add_plugin(WorldInspectorPlugin::new());
 
+    app.add_plugin(BoardPlugin);
+    app.register_type::<Coordinates>();
     app.add_startup_system(camera_setup);
     app.run();
 }

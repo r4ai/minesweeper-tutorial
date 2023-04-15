@@ -5,6 +5,7 @@ use bevy::window::WindowResolution;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use board_plugin::components::Coordinates;
+use board_plugin::resources::BoardOptions;
 use board_plugin::BoardPlugin;
 
 fn main() {
@@ -25,6 +26,12 @@ fn main() {
     app.add_plugin(WorldInspectorPlugin::new());
 
     app.add_plugin(BoardPlugin);
+    app.insert_resource(BoardOptions {
+        map_size: (20, 20),
+        bomb_count: 40,
+        tile_padding: 3.0,
+        ..Default::default()
+    });
     app.register_type::<Coordinates>();
     app.add_startup_system(camera_setup);
     app.run();

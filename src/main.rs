@@ -32,7 +32,6 @@ fn main() {
         tile_padding: 3.0,
         ..Default::default()
     });
-    app.register_type::<Coordinates>();
     app.add_startup_system(camera_setup);
     app.run();
 }

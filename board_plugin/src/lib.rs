@@ -1,5 +1,7 @@
+mod bounds;
 pub mod components;
 pub mod resources;
+mod systems;
 
 use bevy::log;
 use bevy::prelude::*;
@@ -7,7 +9,10 @@ use resources::tile::Tile;
 use resources::tile_map::TileMap;
 use resources::BoardOptions;
 
+use crate::bounds::Bounds2;
 use crate::components::*;
+use crate::resources::tile;
+use crate::resources::Board;
 use crate::resources::BoardPosition;
 use crate::resources::TileSize;
 
@@ -15,7 +20,9 @@ pub struct BoardPlugin;
 
 impl Plugin for BoardPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(Self::create_board);
+        app.insert_resource(Board::init())
+            .add_system(systems::input::input_handling)
+            .add_startup_system(Self::create_board);
         log::info!("Loaded board plugin");
 
         #[cfg(feature = "debug")]
@@ -33,6 +40,7 @@ impl BoardPlugin {
     pub fn create_board(
         mut commands: Commands,
         board_options: Option<Res<BoardOptions>>,
+        mut board: ResMut<Board>,
         windows: Query<&Window>,
         assert_server: Res<AssetServer>,
     ) {
@@ -101,6 +109,12 @@ impl BoardPlugin {
                     font,
                 );
             });
+        board.tile_map = tile_map;
+        board.bounds = Bounds2 {
+            position: board_position.truncate(),
+            size: board_size,
+        };
+        board.tile_size = tile_size;
     }
 
     fn adaptive_tile_size(

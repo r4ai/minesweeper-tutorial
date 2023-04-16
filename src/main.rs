@@ -4,7 +4,6 @@ use bevy::window::WindowResolution;
 #[cfg(feature = "debug")]
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
-use board_plugin::components::Coordinates;
 use board_plugin::resources::BoardOptions;
 use board_plugin::BoardPlugin;
 

@@ -60,7 +60,7 @@ impl TileMap {
         SQUARE_COORDINATES
             .iter()
             .copied()
-            .map(move |tuple| coordinates + tuple.into())
+            .map(move |tuple| coordinates + tuple)
     }
 
     pub fn is_bomb_at(&self, coordinates: Coordinates) -> bool {

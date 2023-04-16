@@ -27,6 +27,16 @@ impl Add for Coordinates {
     }
 }
 
+impl Add<(i8, i8)> for Coordinates {
+    type Output = Self;
+
+    fn add(self, (x, y): (i8, i8)) -> Self::Output {
+        let x = (self.x as i32 + x as i32) as u16;
+        let y = (self.y as i32 + y as i32) as u16;
+        Self { x, y }
+    }
+}
+
 impl Sub for Coordinates {
     type Output = Self;
 
@@ -43,15 +53,6 @@ impl From<(u16, u16)> for Coordinates {
         Self {
             x: tuple.0,
             y: tuple.1,
-        }
-    }
-}
-
-impl From<(i8, i8)> for Coordinates {
-    fn from(tuple: (i8, i8)) -> Self {
-        Self {
-            x: tuple.0 as u16,
-            y: tuple.1 as u16,
         }
     }
 }

@@ -9,6 +9,7 @@ pub struct Board {
     pub bounds: Bounds2,
     pub tile_size: f32,
     pub covered_tiles: HashMap<Coordinates, Entity>,
+    pub entity: Entity,
 }
 
 impl Board {
@@ -21,6 +22,7 @@ impl Board {
             },
             tile_size: 0.,
             covered_tiles: HashMap::default(),
+            entity: Entity::from_bits(0),
         }
     }
 

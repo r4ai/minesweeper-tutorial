@@ -1,3 +1,10 @@
 [target.x86_64-pc-windows-msvc]
 linker = "rust-lld.exe"
-rustflags = ["-Zshare-generics=y"]
+rustflags = ["-Zshare-generics=n"]
+
+[target.x86_64-apple-darwin]
+rustflags = [
+    "-C",
+    "link-arg=-fuse-ld=mold",
+    "-Zshare-generics=y",
+]

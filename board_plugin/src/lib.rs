@@ -18,16 +18,27 @@ use crate::resources::Board;
 use crate::resources::BoardPosition;
 use crate::resources::TileSize;
 
-pub struct BoardPlugin;
+pub struct BoardPlugin<T> {
+    pub running_state: T,
+}
 
-impl Plugin for BoardPlugin {
+impl<T: States> Plugin for BoardPlugin<T> {
     fn build(&self, app: &mut App) {
-        app.insert_resource(Board::init())
-            .add_system(systems::input::input_handling)
-            .add_system(systems::uncover::trigger_event_handler)
+        app
+            // When the running states comes into the stack we load a board
+            .add_system(Self::create_board.in_schedule(OnEnter(self.running_state.clone())))
+            // We handle input and trigger events only if the state is active
+            .add_systems(
+                (
+                    systems::input::input_handling,
+                    systems::uncover::trigger_event_handler,
+                )
+                    .in_set(OnUpdate(self.running_state.clone())),
+            )
+            // We handle uncovering even if the state is inactive
             .add_system(systems::uncover::uncover_tiles)
-            .add_event::<TileTriggerEvent>()
-            .add_startup_system(Self::create_board);
+            .add_system(Self::cleanup_board.in_schedule(OnExit(self.running_state.clone())))
+            .add_event::<TileTriggerEvent>();
         log::info!("Loaded board plugin");
 
         #[cfg(feature = "debug")]
@@ -40,12 +51,11 @@ impl Plugin for BoardPlugin {
     }
 }
 
-impl BoardPlugin {
+impl<T> BoardPlugin<T> {
     /// System to generate the complete board
     pub fn create_board(
         mut commands: Commands,
         board_options: Option<Res<BoardOptions>>,
-        mut board: ResMut<Board>,
         windows: Query<&Window>,
         assert_server: Res<AssetServer>,
     ) {
@@ -86,7 +96,7 @@ impl BoardPlugin {
             HashMap::with_capacity((tile_map.width() * tile_map.height()).into());
         let mut safe_start = None;
 
-        commands
+        let board_entity = commands
             .spawn(SpriteBundle {
                 visibility: Visibility::Visible,
                 transform: Transform::from_translation(board_position),
@@ -119,14 +129,18 @@ impl BoardPlugin {
                     &mut covered_tiles,
                     &mut safe_start,
                 );
-            });
-        board.tile_map = tile_map;
-        board.bounds = Bounds2 {
-            position: board_position.truncate(),
-            size: board_size,
-        };
-        board.tile_size = tile_size;
-        board.covered_tiles = covered_tiles;
+            })
+            .id();
+        commands.insert_resource(Board {
+            tile_map,
+            bounds: Bounds2 {
+                position: board_position.truncate(),
+                size: board_size,
+            },
+            tile_size,
+            covered_tiles,
+            entity: board_entity,
+        });
 
         if options.safe_start {
             if let Some(entity) = safe_start {
@@ -255,5 +269,10 @@ impl BoardPlugin {
             transform: Transform::from_xyz(0., 0., 1.),
             ..Default::default()
         }
+    }
+
+    fn cleanup_board(board: Res<Board>, mut commands: Commands) {
+        commands.entity(board.entity).despawn_recursive();
+        commands.remove_resource::<Board>();
     }
 }

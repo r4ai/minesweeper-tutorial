@@ -31,7 +31,7 @@ pub fn uncover_tiles(
                     continue;
                 }
             };
-            log::info!("Uncovering tile {}", coords);
+            log::debug!("Uncovering tile {}", coords);
             // We remove the entity from the board covered tile map
             match board.try_uncover_tile(coords) {
                 None => log::trace!("Tried to uncover an already uncovered tile"),

@@ -5,14 +5,14 @@ use bevy::{log, prelude::*};
 #[cfg(feature = "debug")]
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
-use board_plugin::resources::BoardOptions;
+use board_plugin::resources::{BoardAssets, BoardOptions, SpriteMaterial};
 use board_plugin::BoardPlugin;
 
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
 pub enum AppState {
     #[default]
-    InGame,
     Out,
+    InGame,
 }
 
 fn main() {
@@ -44,15 +44,54 @@ fn main() {
             running_state: AppState::InGame,
         })
         .add_system(state_handler)
-        .insert_resource(BoardOptions {
-            map_size: (20, 20),
-            bomb_count: 40,
-            tile_padding: 3.0,
-            safe_start: true,
+        .add_startup_system(setup_board)
+        .add_startup_system(camera_setup)
+        .run();
+}
+
+fn setup_board(
+    mut commands: Commands,
+    mut state: ResMut<NextState<AppState>>,
+    asset_server: Res<AssetServer>,
+) {
+    // Board plugin options
+    commands.insert_resource(BoardOptions {
+        map_size: (20, 20),
+        bomb_count: 40,
+        tile_padding: 1.0,
+        safe_start: true,
+        ..Default::default()
+    });
+
+    // Board assets
+    commands.insert_resource(BoardAssets {
+        label: "Default".to_string(),
+        board_material: SpriteMaterial {
+            color: Color::WHITE,
             ..Default::default()
-        });
-    app.add_startup_system(camera_setup);
-    app.run();
+        },
+        tile_material: SpriteMaterial {
+            color: Color::DARK_GRAY,
+            ..Default::default()
+        },
+        covered_tile_material: SpriteMaterial {
+            color: Color::GRAY,
+            ..Default::default()
+        },
+        bomb_counter_font: asset_server.load("fonts/pixeled.ttf"),
+        bomb_counter_colors: BoardAssets::default_colors(),
+        flag_material: SpriteMaterial {
+            texture: asset_server.load("sprites/flag.png"),
+            color: Color::WHITE,
+        },
+        bomb_material: SpriteMaterial {
+            texture: asset_server.load("sprites/bomb.png"),
+            color: Color::WHITE,
+        },
+    });
+
+    // Plugin activation
+    state.set(AppState::InGame);
 }
 
 fn camera_setup(mut commands: Commands) {

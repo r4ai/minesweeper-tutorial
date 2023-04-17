@@ -1,5 +1,5 @@
 use crate::{bounds::Bounds2, components::Coordinates};
-use bevy::{prelude::*, utils::HashMap};
+use bevy::{log, prelude::*, utils::HashMap};
 
 use super::tile_map::TileMap;
 
@@ -8,8 +8,9 @@ pub struct Board {
     pub tile_map: TileMap,
     pub bounds: Bounds2,
     pub tile_size: f32,
-    pub covered_tiles: HashMap<Coordinates, Entity>,
     pub entity: Entity,
+    pub covered_tiles: HashMap<Coordinates, Entity>,
+    pub marked_tiles: Vec<Coordinates>,
 }
 
 impl Board {
@@ -21,8 +22,9 @@ impl Board {
                 size: Vec2 { x: 0., y: 0. },
             },
             tile_size: 0.,
-            covered_tiles: HashMap::default(),
             entity: Entity::from_bits(0),
+            covered_tiles: HashMap::default(),
+            marked_tiles: Vec::default(),
         }
     }
 
@@ -46,11 +48,18 @@ impl Board {
 
     /// Retrieves a covered tile entity
     pub fn tile_to_uncover(&self, coords: &Coordinates) -> Option<&Entity> {
-        self.covered_tiles.get(coords)
+        if self.marked_tiles.contains(coords) {
+            None
+        } else {
+            self.covered_tiles.get(coords)
+        }
     }
 
     /// We try to uncover a tile, returning the entity
     pub fn try_uncover_tile(&mut self, coords: &Coordinates) -> Option<Entity> {
+        if self.marked_tiles.contains(coords) {
+            self.unmark_tile(coords)?;
+        }
         self.covered_tiles.remove(coords)
     }
 
@@ -61,5 +70,34 @@ impl Board {
             .filter_map(|c| self.covered_tiles.get(&c))
             .copied()
             .collect()
+    }
+
+    pub fn try_toggle_mark(&mut self, coords: &Coordinates) -> Option<(Entity, bool)> {
+        let entity = *self.covered_tiles.get(coords)?;
+        let mark = if self.marked_tiles.contains(coords) {
+            self.unmark_tile(coords)?;
+            false
+        } else {
+            self.marked_tiles.push(*coords);
+            true
+        };
+        Some((entity, mark))
+    }
+
+    /// Removes the `coords` from `marked_tiles`
+    fn unmark_tile(&mut self, coords: &Coordinates) -> Option<Coordinates> {
+        let pos = match self.marked_tiles.iter().position(|c| c == coords) {
+            None => {
+                log::error!("Failed to unmark tile at {}", coords);
+                return None;
+            }
+            Some(pos) => pos,
+        };
+        Some(self.marked_tiles.remove(pos))
+    }
+
+    /// Is the board complete
+    pub fn is_completed(&self) -> bool {
+        self.tile_map.bomb_count() as usize == self.covered_tiles.len()
     }
 }

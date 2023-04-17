@@ -1,12 +1,16 @@
 use bevy::{log, prelude::*};
 
-use crate::{events::TileTriggerEvent, resources::Board};
+use crate::{
+    events::{TileMarkEvent, TileTriggerEvent},
+    resources::Board,
+};
 
 pub fn input_handling(
     windows: Query<&Window>,
     board: Res<Board>,
     buttons: Res<Input<MouseButton>>,
     mut tile_trigger_ewr: EventWriter<TileTriggerEvent>,
+    mut tile_mark_ewr: EventWriter<TileMarkEvent>,
 ) {
     let window = windows.single();
     let position = window.cursor_position();
@@ -19,7 +23,7 @@ pub fn input_handling(
             }
             if buttons.just_pressed(MouseButton::Right) {
                 log::info!("Trying to mark tile on {}", coordinates);
-                // TODO: generate an event
+                tile_mark_ewr.send(TileMarkEvent(coordinates));
             }
         }
     }

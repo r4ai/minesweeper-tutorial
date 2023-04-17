@@ -7,6 +7,7 @@ mod systems;
 use bevy::log;
 use bevy::prelude::*;
 use bevy::utils::HashMap;
+use events::BoardCompletedEvent;
 use resources::tile::Tile;
 use resources::tile_map::TileMap;
 use resources::BoardAssets;
@@ -14,6 +15,8 @@ use resources::BoardOptions;
 
 use crate::bounds::Bounds2;
 use crate::components::*;
+use crate::events::BombExplosionEvent;
+use crate::events::TileMarkEvent;
 use crate::events::TileTriggerEvent;
 use crate::resources::Board;
 use crate::resources::BoardPosition;
@@ -37,9 +40,12 @@ impl<T: States> Plugin for BoardPlugin<T> {
                     .in_set(OnUpdate(self.running_state.clone())),
             )
             // We handle uncovering even if the state is inactive
-            .add_system(systems::uncover::uncover_tiles)
+            .add_systems((systems::uncover::uncover_tiles, systems::mark::mark_tiles))
             .add_system(Self::cleanup_board.in_schedule(OnExit(self.running_state.clone())))
-            .add_event::<TileTriggerEvent>();
+            .add_event::<TileTriggerEvent>()
+            .add_event::<TileMarkEvent>()
+            .add_event::<BombExplosionEvent>()
+            .add_event::<BoardCompletedEvent>();
         log::info!("Loaded board plugin");
 
         #[cfg(feature = "debug")]
@@ -137,6 +143,7 @@ impl<T> BoardPlugin<T> {
             tile_size,
             covered_tiles,
             entity: board_entity,
+            marked_tiles: Vec::new(),
         });
 
         if options.safe_start {
